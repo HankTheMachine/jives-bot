@@ -26,7 +26,7 @@ export async function commandExec(msg,args,commandIndex,bot) {
     }
 
 
-
+//TEST
 //ITSE FUNKTIOT
 
 async function addSpotifyAlbumToReviews(bot,msg,args) {
