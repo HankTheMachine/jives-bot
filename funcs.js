@@ -25,8 +25,7 @@ export async function commandExec(msg,args,commandIndex,bot) {
     return await commandArray[commandIndex][1]
     }
 
-
-//TEST
+//TEST2
 //ITSE FUNKTIOT
 
 async function addSpotifyAlbumToReviews(bot,msg,args) {
