@@ -22,7 +22,7 @@ const bot = eris(auth.discordToken);
 const PREFIX = 'levyraati!';
 
 bot.on('ready', () => {
-    console.log('LETS MENNÄÄN!!!')
+    console.log('Jives herätetty kauneusunilta')
 })
 
 
@@ -42,7 +42,7 @@ bot.on('messageCreate', async (msg) => {
     }
 
     // Extract the parts of the command and the command name
-    const parts = content.split(' ').map(s => s.trim()).filter(s => s);
+    const parts = content.split(' ')/*.map(s => s.trim()).filter(s => s)*/;
     const commandName = content.split(' ')[1]/*.slice(PREFIX.length)*/;
     
     // Get the appropriate handler for the command, if there is one.
@@ -53,7 +53,7 @@ bot.on('messageCreate', async (msg) => {
 
     // Separate the command arguments from the command prefix and command name.
     const args = parts.slice(2);
-    loggaa(bot, "Kutsuttu funktiota: "+commandName+" Koko viesti: "+content+" Parts: "+parts+" Args: "+args)
+    loggaa(bot, "Kutsuttu funktiota: "+commandName+" Parts: "+parts+" Args: "+args)
     try {
         // Execute the command.
         await commandExec(msg, args, commandIndex, bot);
