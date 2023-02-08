@@ -81,10 +81,25 @@ bot.on('messageCreate', async (msg) => {
     */
 });
 
- bot.on('error', err => {
+bot.on('error', err => {
     console.warn(err);
  });
  
+bot.on('messageReactionAdd', async (msg,emoji,reactor) => {
+    //Sääntösivun reaktio
+    if (msg.id === "1031996372959907913") {
+        reactor.removeRole("1031693719755296919","Added to channel")
+    }
+
+});
+
+bot.on('messageReactionRemove', async (msg,emoji,userID) => {
+        //Sääntösivun reaktio,
+        if (msg.id === "1031996372959907913") {
+            bot.addGuildMemberRole("1031479962005409802",userID,"1031693719755296919","Does not want to join channel :(")
+        }
+})
+
  bot.connect();
 
 /*const Discord = require('discord.io');
