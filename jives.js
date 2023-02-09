@@ -1,11 +1,7 @@
 //const axios = require('axios');
 //const eris = require('eris');
-//require ('./auth.js');
 
 import eris from 'eris';
-
-
-import {auth} from './auth.js'
 import { 
     commandGet,
     commandExec,
@@ -13,12 +9,12 @@ import {
 
 
 //HOT SHIT
-
+const discordToken = process.env.DISCORD_TOKEN
 
 ///SPOTIFY API
 //axios.get('https://accounts.spotify.com/authorize?client:id='+{auth.spotifyToken}&response_type=code&redirect:uri=https://www.henkimaailma.net/callback');
 
-const bot = eris(auth.discordToken);
+const bot = eris(discordToken);
 const PREFIX = 'jives!';
 
 bot.on('ready', () => {

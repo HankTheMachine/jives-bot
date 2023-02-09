@@ -1,5 +1,7 @@
 Botti käyttää Discordin ja Spotifyn API:n kanssa keskustellakseen näiden palvelujen antamia Oauth-protokollan mukaisia avaimia. Tietosuojasyistä näitä ei jaeta ulospäin, mutta auth-tiedoston formaatti on seuraava:
 
+
+// KAIKKI TÄMÄ ON AJALTA ENNEN KUIN ASIAT MUUTTUI JA ENV MUUTTUJIA KÄYTETTIIN EMT
 //JIVES AUTH
 
 //Vaikka tämä on gitignoressa älä silti jätä tänne mitään ennen pushaamista

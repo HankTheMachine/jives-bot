@@ -1,8 +1,10 @@
 import { auth } from "./auth.js";
-//import {getAccessToken} from "./auth.js"
 import axios from 'axios';
 import mongoose from 'mongoose';
-import querystring from 'node:querystring';
+
+//HOT SHIT
+const mongoUrlJivesLevyraati = process.env.MONGOURL_JIVES
+const spotifyApiAuth = process.env.SPOTIFYAPI_AUTH
 
 //MONGO STUFF
 const albumSchema = new mongoose.Schema({
@@ -23,13 +25,6 @@ const albumSchema = new mongoose.Schema({
     reviewCount : Number,
     reviewAverage: Number,
     albumReviews : [],
-})
-const reviewSchema = new mongoose.Schema({
-    reviewerId: String,
-    reviewerName: String,
-    reviewType: String,
-    albumId: String,
-    rating: Number,
 })
 //const Review = mongoose.model('Review'.reviewSchema)
 
@@ -68,9 +63,9 @@ async function pingJives(bot,msg,args) {
         return
     }
     const upDays = Math.floor(bot.uptime/86400000)
-    const upHours = Math.floor((bot.uptime % 86400000) / 3600000)
-    const upMinutes = Math.floor((bot.uptime % 3600000)/60000)
-    const upSeconds = Math.floor((bot.uptime % 60000) / 1000)
+    const upHours = Math.floor(((bot.uptime-upDays*86400000)) / 3600000)
+    const upMinutes = Math.floor(((bot.uptime-upHours*3600000-upDays*86400000))/60000)
+    const upSeconds = Math.floor(((bot.uptime -upMinutes*60000-upHours*3600000-upDays*86400000)) / 1000)
     vastaa(bot,msg,("Charming evening, maa-a-a'am! \nOlen ollut käynnissä "+upDays+" päivää, "+upHours+" tuntia, "+upMinutes+" minuuttia ja "+upSeconds+" sekuntia."))
     return
 }
@@ -80,7 +75,7 @@ async function showLeaderBoard(bot,msg,args) {
         return
     }
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     let allAlbums;
     await Album
         .find({})
@@ -131,7 +126,7 @@ async function showRatingAverage(bot,msg,args){
 
 async function setRatingAverage(bot,msg,ratingAverage) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     Album
         .updateOne(
             {
@@ -229,7 +224,7 @@ async function rateAlbum(bot,msg,args) {
 
 async function deleteMongoReview(bot,msg,ratingAverage) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     await Album
         .updateOne(
             { 
@@ -255,7 +250,7 @@ async function updateMongoReview(bot,msg,Review,ratingAverage) {
 
 async function pushReviewToMongo(bot,msg,Review,ratingAverage) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     Album
         .updateOne(
             {
@@ -316,7 +311,7 @@ async function removeAlbumFromReviews(bot,msg,args) {
 
     //Jos delete-funktion kutsuja ei ole botin omistaja tai alkuperäisen arvostelun lähettäjä, ei saa poistaa
     if (msg.author.id !== (submitterId || auth.HenKonenDiscordId) ) {
-        loggaa(bot,("Käyttäjä "+msg.author.username+" yritti poistaa arvion"))
+        vastaaJaPoista(bot,msg,(msg.author.username+", et voi poistaa toisen lähettämää arviota!"))
         return
     }
     
@@ -330,7 +325,7 @@ async function removeAlbumFromReviews(bot,msg,args) {
 
 async function getAlbum(id) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     let albumData;
     await Album
         .findOne({albumReviewTopicDiscord: id})
@@ -343,7 +338,7 @@ async function getAlbum(id) {
 
 async function deleteAlbumFromMongo(id) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     await Album
         .deleteOne({albumReviewTopicDiscord: id})
         .then( res => {
@@ -490,7 +485,7 @@ async function getSpotifyApiData(submission,tokenraw) {
 
 async function getAccessToken() {
     var myHeaders = new Headers();
-    myHeaders.append("Authorization", auth.spotifyApiAuth);
+    myHeaders.append("Authorization", spotifyApiAuth);
     myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
     
     var urlencoded = new URLSearchParams();
@@ -532,7 +527,7 @@ function stringifyArtists(artistArray) {
 
 async function isAlbumInDatabase(id) {
     const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(auth.mongoUrlJivesLevyraati);
+    await mongoose.connect(mongoUrlJivesLevyraati);
     let albumData;
     let reviewTopic;
     let itsDARE;
@@ -552,7 +547,7 @@ async function isAlbumInDatabase(id) {
     return {itsDARE,reviewTopic}   
 }
 async function pushAlbumToMongo(album) {
-    await mongoose.connect(auth.mongoUrlJivesLevyraati)
+    await mongoose.connect(mongoUrlJivesLevyraati)
     album
         .save()
         .then(result => {
