@@ -15,5 +15,8 @@
         "express": "^4.18.2",
         "mongoose": "^6.9.0",
         "winston": "^3.8.2"
+    },
+    "scripts": {
+        "start": "node jives.js"
     }
 }

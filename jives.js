@@ -18,7 +18,7 @@ const bot = eris(discordToken);
 const PREFIX = 'jives!';
 
 bot.on('ready', () => {
-    console.log('Jives herätetty kauneusunilta')
+    console.log('Jives herätetty kauneusunilta, muutokset näkyy?')
 })
 
 
@@ -96,85 +96,4 @@ bot.on('messageReactionRemove', async (msg,emoji,userID) => {
         }
 })
 
- bot.connect();
-
-/*const Discord = require('discord.io');
-/*var logger = require('winston');
-require('dotenv').config();
-const client = new Discord.Client();
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-});
-
-client.login(process.env.DISCORD_TOKEN);
-*/
-
-/*
-// Configure logger settings
-
-logger.remove(logger.transports.Console);
-
-logger.add(new logger.transports.Console, {
-
-colorize: true
-});
-
-logger.level = 'debug';
-
-// Initialize Discord Bot
-
-var bot = new Discord.Client({
-
-token: auth.token,
-
-autorun: true
-
-});
-
-bot.on('ready', function (evt) {
-
-logger.info('Connected');
-
-logger.info('Logged in as: ');
-
-logger.info(bot.username + ' - (' + bot.id + ')');
-});
-
-bot.on('message', function (user, userID, channelID, message, evt) {
-
-// Our bot needs to know if it will execute a command
-
-// It will listen for messages that will start with `!`
-
-if (message.substring(0, 1) == '!') {
-
-    var args = message.substring(1).split(' ');
-
-    var cmd = args[0];
-
-
-    args = args.splice(1);
-
-    switch(cmd) {
-
-        // !ping
-
-        case 'ping':
-
-            bot.sendMessage({
-
-                to: channelID,
-
-                message: 'Pong!'
-
-            });
-
-        break;
-
-        // Just add any case commands if you want to..
-
-     }
-
- }
-});
-*/
+bot.connect();

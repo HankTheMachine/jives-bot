@@ -26,18 +26,29 @@ const albumSchema = new mongoose.Schema({
     reviewAverage: Number,
     albumReviews : [],
 })
-//const Review = mongoose.model('Review'.reviewSchema)
+const Album = mongoose.model('Album', albumSchema);
+
+const reviewSchema = new mongoose.Schema({
+    reviewerId: String,
+    reviewerName: String,
+    reviewType: String,
+    albumId: String,
+    rating: Number,
+})
+const Review = mongoose.model('Review', reviewSchema)
+mongoose.set('strictQuery',false)
+
 
 //LISTA BOTIN FUNKTIOISTA   
 export async function commandGet(commandName,msg,args,bot) {
     const commandArray = [
-        ['submit', addSpotifyAlbumToReviews(bot,msg,args)],
-        ['DELETEALBUM', removeAlbumFromReviews(bot,msg)],
-        ['rate', rateAlbum(bot,msg,args)],
-        ['deleterating', deleteMyRating(bot,msg,args)],
-        ['score', showRatingAverage(bot,msg,args)],
-        ['leaderboard', showLeaderBoard(bot,msg,args)],
-        ['huhuu', pingJives(bot,msg,args)],
+        ['submit'],
+        ['DELETEALBUM'],
+        ['rate'],
+        ['deleterating'],
+        ['score'],
+        ['leaderboard'],
+        ['huhuu'],
     ]
     const commandIndex = commandArray.indexOf(commandArray.find(c => c[0]===commandName))
     return commandIndex
@@ -53,6 +64,7 @@ export async function commandExec(msg,args,commandIndex,bot) {
         ['leaderboard', showLeaderBoard(bot,msg,args)],
         ['huhuu', pingJives(bot,msg,args)],
     ]
+    //mongoose.connect(mongoUrlJivesLevyraati)
     return await commandArray[commandIndex][1]
     }
 
@@ -74,15 +86,15 @@ async function showLeaderBoard(bot,msg,args) {
     if(!msg || (msg.content.split(' ')[1]!=="leaderboard")) {
         return
     }
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
+    
+    mongoose.connect(mongoUrlJivesLevyraati);
     let allAlbums;
     await Album
         .find({})
         .then(res => {
-            allAlbums=res,
-            mongoose.connection.close();
+            allAlbums=res
         })
+        //.then(mongoose.connection.close())
     const lb = allAlbums.map(e=> [e.albumArtists,e.albumTitle,(e.reviewAverage/10), e.reviewCount])
     console.log("Kaikki:" ,lb)
     const lbSorted = lb.sort((a,b) => {return b[2] - a[2]}).slice(0,10)
@@ -125,9 +137,9 @@ async function showRatingAverage(bot,msg,args){
 }
 
 async function setRatingAverage(bot,msg,ratingAverage) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
-    Album
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
+    await Album
         .updateOne(
             {
                 albumReviewTopicDiscord : msg.channel.id
@@ -138,7 +150,7 @@ async function setRatingAverage(bot,msg,ratingAverage) {
         )
         .then(res => {
             console.log("Response yrityksestä asettaa mongon average: ",res)
-            mongoose.connection.close();
+            //mongoose.connection.close()
         })
     return
 }
@@ -185,7 +197,7 @@ async function rateAlbum(bot,msg,args) {
 
     //-1 jos vanhaa arviota ei ole, jos on, tämän indeksi otetaan talteen
     const indexOfOldReview = albumReviews.indexOf(oldReviewObject)
-    const Review = mongoose.model('Review', reviewSchema)
+    
     const reviewToAdd = new Review({
         reviewerId: msg.author.id,
         reviewerName: msg.author.username,
@@ -223,8 +235,8 @@ async function rateAlbum(bot,msg,args) {
 }
 
 async function deleteMongoReview(bot,msg,ratingAverage) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
     await Album
         .updateOne(
             { 
@@ -237,7 +249,7 @@ async function deleteMongoReview(bot,msg,ratingAverage) {
             }
         ).then(result => {
             console.log('Koetettiin poistaa vanha arvostelu tietokannasta: ',result);
-            mongoose.connection.close();
+            //mongoose.connection.close();
         })
     return
 } 
@@ -249,9 +261,9 @@ async function updateMongoReview(bot,msg,Review,ratingAverage) {
     }
 
 async function pushReviewToMongo(bot,msg,Review,ratingAverage) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
-    Album
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
+    await Album
         .updateOne(
             {
                 albumReviewTopicDiscord : msg.channel.id
@@ -264,7 +276,7 @@ async function pushReviewToMongo(bot,msg,Review,ratingAverage) {
         )
         .then(res => {
             console.log("Pushauksen res: ",res)
-            mongoose.connection.close();
+            //setTimeout((mongoose.connection.close()),1000);
         })
     return
 }
@@ -324,25 +336,25 @@ async function removeAlbumFromReviews(bot,msg,args) {
 }
 
 async function getAlbum(id) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
     let albumData;
     await Album
         .findOne({albumReviewTopicDiscord: id})
         .then( res => {
             albumData=res;
-            mongoose.connection.close();
+            //mongoose.connection.close();
         })
     return albumData 
 }
 
 async function deleteAlbumFromMongo(id) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
     await Album
         .deleteOne({albumReviewTopicDiscord: id})
         .then( res => {
-            mongoose.connection.close();
+            //mongoose.connection.close();
         })
     return
 }
@@ -395,7 +407,7 @@ async function addSpotifyAlbumToReviews(bot,msg,args) {
     const reviewThread = await postAlbumTopicToDiscord(bot,artists,title,releaseYear,msg.author,submission,img);
 
     //Nyt kun viestin id on tiedossa voidaan laittaa mongoon
-    const Album = mongoose.model('Album', albumSchema);
+    //const Album = mongoose.model('Album', albumSchema);
     const albumToAdd = new Album({
         albumSubmitterId: submitterId,
         albumSubmitterUserName: submitterName,
@@ -526,8 +538,8 @@ function stringifyArtists(artistArray) {
 }
 
 async function isAlbumInDatabase(id) {
-    const Album = mongoose.model('Album', albumSchema);
-    await mongoose.connect(mongoUrlJivesLevyraati);
+    //const Album = mongoose.model('Album', albumSchema);
+    mongoose.connect(mongoUrlJivesLevyraati);
     let albumData;
     let reviewTopic;
     let itsDARE;
@@ -536,7 +548,7 @@ async function isAlbumInDatabase(id) {
         .then( res => {
             console.log("Data Mongosta: ",res)
             albumData=res;
-            mongoose.connection.close();
+            //mongoose.connection.close();
         })
     if (albumData===null) {
         itsDARE = false;
@@ -547,12 +559,12 @@ async function isAlbumInDatabase(id) {
     return {itsDARE,reviewTopic}   
 }
 async function pushAlbumToMongo(album) {
-    await mongoose.connect(mongoUrlJivesLevyraati)
-    album
+    mongoose.connect(mongoUrlJivesLevyraati)
+    await album
         .save()
         .then(result => {
             console.log('Albumi lisätty tietokantaan: ',result)
-            mongoose.connection.close();
+            //mongoose.connection.close();
         })
 }
 
