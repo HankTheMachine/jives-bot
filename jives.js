@@ -113,7 +113,7 @@ app.get('/isSkriimOnline', async (req, res) => {
 })
 
 //
-// Express appin funktiot käynnistäessä ja sammuttaessa
+// Express appin funktiot  ja sammuttaessa
 //
 
 process.on('exit', function() {
@@ -121,6 +121,10 @@ process.on('exit', function() {
     mongoose.connection.close();
     console.log("Yhteys tietokantaan katkaistu.")
 })
+
+//
+// Käynnistetään serveri ja haetaan levyraadin Mongodata serverille
+//
 
 app.listen(port)
 console.log("Express serveri käynnistyy, kuunnellaan porttia ",port);
@@ -141,7 +145,7 @@ bot.on('ready', () => {
     console.log('Jives herätetty kauneusunilta!')
 })
 
-//Asioista konvertoidaan usein ensimmäinen alkukirjain pieneksi koska älypuhelimet ja helppokäyttöisyys
+// Konvertoidaan usein ensimmäinen alkukirjain pieneksi koska älypuhelimet ja helppokäyttöisyys
 export function firstLow(string) {
     return string.charAt(0).toLowerCase() + string.slice(1)
 }
