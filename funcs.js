@@ -99,11 +99,10 @@ async function pingJives(bot,cmd,msg,args) {
         return
     }
 
-    const upDays = Math.floor(bot.uptime/86400000)
-    const upHours = Math.floor(((bot.uptime-upDays*86400000)) / 3600000)
+    const upHours = Math.floor(bot.uptime/ 3600000)
     const upMinutes = Math.floor(((bot.uptime-upHours*3600000-upDays*86400000))/60000)
     const upSeconds = Math.floor(((bot.uptime -upMinutes*60000-upHours*3600000-upDays*86400000)) / 1000)
-    vastaa(bot,msg,("Charming evening, maa-a-a'am! \nOlen ollut käynnissä "+upDays+" päivää, "+upHours+" tuntia, "+upMinutes+" minuuttia ja "+upSeconds+" sekuntia."))
+    vastaa(bot,msg,("Charming evening, maa-a-a'am! \nOlen ollut käynnissä "+upHours+" tuntia, "+upMinutes+" minuuttia ja "+upSeconds+" sekuntia."))
     return
 }
 

@@ -90,26 +90,26 @@ app.get('/isSkriimOnline', async (req, res) => {
     await axios
         .get(url,API_HEADERS)
         .then(res => {
-                console.log(res.data)
+                //console.log(res.data)
                 if (res.data.data.length > 0) {
-                    console.log("Live")
+                    //console.log("Live")
                     status = true
                 } else {
-                    console.log("not live")
+                    //console.log("not live")
                     status = false}
         }).catch(function (error) {
             console.log(error.response)
                 console.log("Twitch api palautti errorin, whatup");
             })
 
-    //Odotetaan sekunti että ehditään saada tieto striimin kunnosta Twitchistä 
+    //Odotetaan 0,3s että ehditään saada tieto striimin kunnosta Twitchistä 
     setTimeout(()=>{
         if (status===true) {
             res.status(200).send(true)
         } else {
             res.status(200).send(false)
         }
-    },1000)
+    },300)
 })
 
 //
