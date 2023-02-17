@@ -30,7 +30,7 @@ let levyRaatiData = [];
 //Lokaalin levyraatidatan käsittelyfunktiot
 
 function simplifyAlbumData(e) {
-    return [e.albumArtists,e.albumTitle,e.albumImg,e.albumReleaseDate,e.albumCopyrights,e.reviewAverage,e.reviewCount]
+    return [e.albumArtists,e.albumTitle,e.albumImg,e.albumReleaseDate,e.albumCopyrights,e.reviewAverage,e.reviewCount,e.albumReviewTopicDiscord]
 }
 
 function findLocalLevyRaatiIndex(album) {

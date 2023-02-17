@@ -125,7 +125,7 @@ async function showLeaderBoard(bot,cmd,msg,args) {
     const leaderboardEmotes = [':one:', ':two:', ':three:', ':four:',':five:',':six:',':seven:',':eight:',':nine:',':keycap_ten:'];
 
     for (let i=0;i<lbSorted.length;i++) {
-        leaderBoardMsg = leaderBoardMsg.concat(leaderboardEmotes[i]+" **"+lbSorted[0][0]+" - "+lbSorted[0][1]+"**: "+lbSorted[0][2]+" ("+lbSorted[0][3]+") \n");
+        leaderBoardMsg = leaderBoardMsg.concat(leaderboardEmotes[i]+" **"+lbSorted[i][0]+" - "+lbSorted[i][1]+"**: "+lbSorted[i][2]+" ("+lbSorted[i][3]+") \n");
     }
     vastaaJaPoista(bot,msg,leaderBoardMsg);
 }
