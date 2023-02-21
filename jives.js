@@ -194,7 +194,7 @@ bot.on('guildMemberAdd', (guild,member) => {
 bot.on('messageReactionAdd', async (msg,emoji,reactor) => {
     //Ohitetaan Jivesin itsensä lähettämät reaktiot
     if (reactor.id==="1070384026591973447") {
-        console.log("se olen minä!")
+        //console.log("se olen minä!")
         return
     }
     //Sääntösivun reaktio --> Poistetaan jäseneltä rajoittava "uusi"-rooli

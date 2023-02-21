@@ -317,7 +317,7 @@ async function rateAlbum(bot,cmd,msg,args) {
     //Konvertoidaan rating yhdenmukaiseksi asteikolle 0-1000
     let rating=parseRating(args[0],bot,msg)
     if (rating===undefined) {
-        vastaaJaPoista(bot,msg,(msg.author.username+", tarkista arvosanasi muotoilu! Anna pisteesi joko kokonaislukuna 0-100 tai murtolukuna, esim: 7/10. Arvosanasi _'"+args[0]+ "'_ ei kelpaa."));
+        vastaaDmJaPoista(bot,msg,("Tarkista arvosanasi muotoilu! Anna pisteesi joko kokonaislukuna 0-100 tai murtolukuna, esim: 7/10. Arvosanasi _'"+args[0]+ "'_ ei kelpaa."));
         return
     }
     
