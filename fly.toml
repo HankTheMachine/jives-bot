@@ -1,4 +1,4 @@
-# fly.toml file generated for jives-bot on 2023-02-14T11:14:04+02:00
+# fly.toml file generated for jives-bot on 2023-02-21T11:33:13+02:00
 
 app = "jives-bot"
 kill_signal = "SIGINT"

@@ -10,6 +10,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { Album } from './funcs.js';
+import { rateByEmote } from './funcs.js';
 const app = express()
 app.use(cors())
 
@@ -18,7 +19,7 @@ const discordToken = process.env.DISCORD_TOKEN;
 const twitchToken = process.env.TWITCH_TOKEN;
 const twitchAppId = process.env.TWITCH_APPID;
 const mongoUrl = process.env.MONGOURL_JIVES;
-const port = process.env.PORT || 8080;
+const port = process.env.PORT //|| 8080;
 
 //
 //Kun serveri on käynnissä, levyraadin dataa voi säilöä täällä ettei 
@@ -184,11 +185,39 @@ bot.on('messageCreate', async (msg) => {
     }
 });
 
+//Kun kuka tahansa liittyy serverille
+bot.on('guildMemberAdd', (guild,member) => {
+    bot.addGuildMemberRole("1031479962005409802",member.id,"1031693719755296919","New member")
+})
+
 // Kun kuka tahansa lisää reaktion johonkin viestiin kun Jives on kuulemassa
 bot.on('messageReactionAdd', async (msg,emoji,reactor) => {
+    //Ohitetaan Jivesin itsensä lähettämät reaktiot
+    if (reactor.id==="1070384026591973447") {
+        console.log("se olen minä!")
+        return
+    }
     //Sääntösivun reaktio --> Poistetaan jäseneltä rajoittava "uusi"-rooli
     if (msg.id === "1031996372959907913") {
         reactor.removeRole("1031693719755296919","Added to channel")
+    }
+
+    //Arviointi reagoimalla
+    const albumIdToRate = msg.id
+    const fakeMsg = {author:reactor,channel:{id:msg.id},id:msg.id}
+    let allReviewTopics = levyRaatiData.map(album => album[7])
+    const leaderboardEmotes = ['1️⃣', '2️⃣', '3️⃣', '4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+    if (leaderboardEmotes.includes(emoji.name) && allReviewTopics.includes(albumIdToRate)) {
+        const ratingFromEmote = (leaderboardEmotes.indexOf(emoji.name)+1)*100
+        console.log("Koitetaan arvostella? arvosana "+ratingFromEmote)
+        try {
+            // Kokeillaan arvostella albumi parsitulla arvosanalla
+            await rateByEmote(bot, "emoteRating",albumIdToRate, ratingFromEmote, reactor, fakeMsg);
+        } catch (err) {
+            console.warn('Error handling command');
+            console.warn(err);
+        }
+        bot.removeMessageReaction(msg.channel.id,msg.id,emoji.name,reactor.id);
     }
 
 });
