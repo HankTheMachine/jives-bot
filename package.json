@@ -1,6 +1,6 @@
 {
     "name": "jives-bot",
-    "version": "0.9.1",
+    "version": "1.0.0",
     "description": "Handles Henkimaailma server levyraati action",
     "type": "module",
     "main": "jives.js",
