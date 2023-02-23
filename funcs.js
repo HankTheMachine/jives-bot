@@ -478,9 +478,11 @@ async function removeAlbumFromReviews(bot,cmd,msg,args) {
     const submitterId = reviewMongo.albumSubmitterId
 
     //Jos delete-funktion kutsuja ei ole botin omistaja tai alkuperäisen arvostelun lähettäjä, ei saa poistaa
-    if (msg.author.id !== (submitterId || auth.HenKonenDiscordId) ) {
-        vastaaJaPoista(bot,msg,(msg.author.username+", et voi poistaa toisen lähettämää arviota!"))
-        return
+    if (msg.author.id !== submitterId) {
+        if (msg.author.id !== auth.HenKonenDiscordId) {
+            vastaaJaPoista(bot,msg,(msg.author.username+", et voi poistaa toisen lähettämää arviota!"))
+            return
+        }
     }
     
     //Luvallinen ihminen poistamassa, poistetaan
