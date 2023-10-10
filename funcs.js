@@ -1,15 +1,22 @@
 import { auth } from "./auth.js";
 import axios from 'axios';
+import jsdom from 'jsdom';
 import mongoose from 'mongoose';
 import { 
     addAlbumToLocal, 
     removeAlbumFromLocal,
     upDateRatingLocal, 
 } from "./jives.js";
+import {
+    loggaa,
+    vastaa,
+    vastaaJaPoista,
+    vastaaDm,
+    vastaaDmJaPoista,
+} from "./funcs-communications.js"
 
-//HOT SHIT
 const spotifyApiAuth = process.env.SPOTIFYAPI_AUTH
-const mongoUrl = process.env.MONGOURL_JIVES;
+
 
 //MONGO STUFF
 export const albumSchema = new mongoose.Schema({
@@ -45,7 +52,15 @@ const Review = mongoose.model('Review', reviewSchema)
 
 
 //LISTA BOTIN FUNKTIOISTA   
+
+/**
+ * Palauttaa Jivesin komentoa vastaavan indeksin, jotta tietää mitä funktiota ollaan kutsumassa.
+ * 
+ * @param {string} commandName Parsitaan käyttäjän viestistä.
+ * @return {number} Komennon indeksi funktion commandGet sisäisestä listasta.
+ */
 export async function commandGet(commandName,msg,args,bot) {
+
     const commandArray = [
         ['submit'],
         ['dELETEALBUM'],
@@ -60,7 +75,18 @@ export async function commandGet(commandName,msg,args,bot) {
     const commandIndex = commandArray.indexOf(commandArray.find(c => c[0]===commandName))
     return commandIndex
 }
-
+/**
+ * Suorittaa Jivesin tuntemista komennoista sen, minkä indeksi on löydetty.
+ * 
+ * Palauttaa async funktion eli odottaa kunnes tunnistettu komento on suoritettu.
+ * 
+ * @param {*} msg Käyttäjän viesti kokonaisuudessaan.
+ * @param {*} args Käyttäjän viestistä parsitut argumentit.
+ * @param {*} commandIndex Kutsuttavan komennon indeksi. Käytetään valitsemaan oikea komento.
+ * @param {*} cmd Käyttäjän viestistä parsittu komennon nimi. Käytetään kaikissa komennoissa varmistamaan, ettei komentoa ajeta silloin kun Jives tarkistaa mitä komentoa halutaan ajaa.
+ * @param {*} bot
+ * @return await [kutsuttavafunktio].
+ */
 export async function commandExec(msg,args,commandIndex,cmd,bot) {
     const commandArray = [
         ['submit', addSpotifyAlbumToReviews(bot,cmd,msg,args)],
@@ -76,11 +102,22 @@ export async function commandExec(msg,args,commandIndex,cmd,bot) {
     return await commandArray[commandIndex][1]
     }
 
+
+
 //ITSE FUNKTIOT
 
+/**
+ * Emojireaktion käsittely ja arvion päivittäminen.
+ * 
+ * @param {*} cmd Aseta parametriksi "emoteRating". Tällä varmistellaan ettei funktiota kutsuta vahingossa.
+ * @param {*} albumIdToRate Albumia vastaava Discordin topic
+ * @param {*} rating Pistearvio 100-1000
+ * @param {*} reactor Käyttäjä, jonka emojireaktiota käsitellään
+ * @param {*} msg Vaikka arvioidaan emojiin reagoimalla, tarvitaan kuitenkin "viesti" jotta voidaan kierrättää muita arvostelufunktioita. Tämä feikkiviesti luodaan jives.js puolella.
+ */
 export async function rateByEmote(bot,cmd,albumIdToRate,rating,reactor,msg) {
     //Ei paskota hommia jos ei ole viestiä tai komento ei ole oikea
-    console.log("Emojiarvio alkaa")
+    //console.log("Emojiarvio alkaa")
     if(cmd!== "emoteRating") {
         return
     }
@@ -104,19 +141,16 @@ export async function rateByEmote(bot,cmd,albumIdToRate,rating,reactor,msg) {
         albumId: msg.id,
         rating: rating,
     })
-
-    //console.log("Vanhan arvion index: ",indexOfOldReview)
-    //console.log("Uusi arvio: ",reviewToAdd)
     
-    // Lasketaan uusi average
+    // Otetaan talteen vanhat albumin pistekeskiarvon tiedot
     let reviewsAverage = albumData.reviewAverage;
     const reviewCount = albumData.reviewCount;
 
-    //otetaan direct message kanava vastausta varten
+    //otetaan direct message kanava botin käyttäjälle lähetettävää vastausta varten
     const DmKanavaObj = await bot.getDMChannel(reactor.id)
     const DmKanava = DmKanavaObj.id
 
-    if (indexOfOldReview===-1) {
+    if (indexOfOldReview===-1) { //Käyttäjä ei arvostellut levyä aiemmin
         //Lasketaan uusi keskiarvo arvosanoista
         reviewsAverage=Math.floor(reviewsAverage+((rating-reviewsAverage)/(reviewCount+1)))
         console.log("Uusi average on ",reviewsAverage)
@@ -137,16 +171,22 @@ export async function rateByEmote(bot,cmd,albumIdToRate,rating,reactor,msg) {
     return
 }
 
-
+/**
+ * Testifunktio. Jives lähettää vastauksena yksityisviestin "Terve!"
+ */
 async function greetMe(bot,cmd,msg,args) {
     if (!msg || cmd!=="greetMe") {
         return
     }
-    const channel= await bot.getDMChannel(msg.author.id)
     await vastaaDm(bot,msg,"Terve!")
 }
 
-
+/**
+ * Vastataan käyttäjälle minkä arvosanan tämä on antanut albumille.
+ * 
+ * @param {*} args Jos ensimmäinen argumentti "p" Jives näyttää arvosanan julkisesti kanavalle jossa komento annettiin.
+ * @returns 
+ */
 async function showMyRating(bot,cmd,msg,args) {
     if(!msg || cmd!=="myrating") {
         return
@@ -175,11 +215,14 @@ async function showMyRating(bot,cmd,msg,args) {
         if (arviosi===undefined) {
             await vastaaDmJaPoista(bot,msg,(msg.author.mention+", et ole vielä antanut levylle "+albumi+" arvosanaa."))
         } else {
-            await vastaaDmJaPoista(bot,msg,(msg.author.mention+", olet antanut albumille *"+albumi+"**"+(arviosi.rating/10)+"** pistettä!"))
+            await vastaaDmJaPoista(bot,msg,(msg.author.mention+", olet antanut albumille "+albumi+" **"+(arviosi.rating/10)+"** pistettä!"))
         }
     }
 }
 
+/**
+ * Testifunktio. Pingataan Jivesia ja Jives kertoo uptimensa.
+ */
 async function pingJives(bot,cmd,msg,args) {
     if(!msg || cmd !=="huhuu") {
         return
@@ -192,6 +235,10 @@ async function pingJives(bot,cmd,msg,args) {
     return
 }
 
+/**
+ * Vastataan käyttäjälle levyraadin leaderboard.
+ * @param {*} args Ensimmäinen argumentti "p" jos halutaan julkinen listaus.
+ */
 async function showLeaderBoard(bot,cmd,msg,args) {
     if(!msg || cmd !== "leaderboard") {
         return
@@ -226,13 +273,20 @@ async function showLeaderBoard(bot,cmd,msg,args) {
     }
 }
 
+/**
+ * Vastaa käyttäjälle albumin arvioiden keskiarvon.
+ * 
+ * Myös: päivittää Mongoon laskemansa keskiarvon - jostain syystä.
+ * 
+ * @param {*} args Ensimmäinen argumentti "p" jos halutaan vastaus kaikkien nähtäville kanavalle jossa komento annettiin.
+ */
 async function showRatingAverage(bot,cmd,msg,args){
     if(!msg || cmd!== "score") {
         return
     }
     const albumData=(await getAlbum(msg.channel.id));
     if (albumData===null) {
-        vastaa(bot,msg, "En tiedä minkä albumin arvosanaa yrität hakea. Kutsu funktiota vain levyn threadissa.")
+        vastaa(bot,msg, "En tiedä minkä albumin pistekeskiarvoa yrität hakea. Kutsu funktiota vain levyn threadissa.")
         return
     }
     let arvioidenKA=0;
@@ -254,6 +308,12 @@ async function showRatingAverage(bot,cmd,msg,args){
     return
 }
 
+/**
+ * Async: Asettaa mongoon albumin tietoihin parametrina syötetyn arvioiden keskiarvon.
+ * 
+ * @param {*} msg Käyttäjän viesti kokonaisuudessaan.
+ * @param {*} ratingAverage Ennen kutsua laskettu uusi arvioiden keskiarvo.
+ */
 async function setRatingAverage(bot,msg,ratingAverage) {
     await Album
         .updateOne(
@@ -270,6 +330,12 @@ async function setRatingAverage(bot,msg,ratingAverage) {
     return
 }
 
+/**
+ * Poistaa käyttäjän aiemmin lähettämän arvion tietokannoista ja päivittää albumin pistekeskiarvotiedot.
+ * 
+ * @param {*} msg Käyttäjän viestin data kokonaisuudessaan.
+ * @param {*} args Käyttäjän viestistä parsitut argumentit. Jos 1. argumentti "p" Jives antaa ilmoituksen arvion poistosta julkisesti.
+ */
 async function deleteMyRating(bot,cmd,msg,args) {
     if(!msg || cmd!== "deleterating") {
         return
@@ -300,6 +366,16 @@ async function deleteMyRating(bot,cmd,msg,args) {
     }
 }
 
+/**
+ * Käsitellään käyttäjän lähettämä pistearvio albumille.
+ * 
+ * Tärkeimpiä Jivesin funktioita.
+ * 
+ * @param {*} bot Kaikissa Jivesin komennoissa syötetään botin omat tiedot.
+ * @param {*} cmd Viestistä parsittu komento.
+ * @param {*} msg Käyttäjän viestin data kokonaisuudessaan.
+ * @param {*} args Arg 1: pistemäärä käyttäjän valitsemassa formaatissa. Arg2: "p" tai ei mitään.
+ */
 async function rateAlbum(bot,cmd,msg,args) {
     //Ei paskota hommia jos ei ole viestiä tai komento ei ole oikea
     if(!msg || cmd!== "rate") {
@@ -312,7 +388,6 @@ async function rateAlbum(bot,cmd,msg,args) {
     if (args[1] === undefined) {
         pub = "n";
     }
-    console.log("pub status ? "+pub)
 
     //Konvertoidaan rating yhdenmukaiseksi asteikolle 0-1000
     let rating=parseRating(args[0],bot,msg)
@@ -340,11 +415,8 @@ async function rateAlbum(bot,cmd,msg,args) {
         albumId: msg.channel.id,
         rating: rating,
     })
-
-    console.log("Vanhan arvion index: ",indexOfOldReview)
-    console.log("Uusi arvio: ",reviewToAdd)
     
-    // Lasketaan uusi average
+    // Vanhat albumin pistekeskiarvon tiedot
     let reviewsAverage = albumData.reviewAverage;
     const reviewCount = albumData.reviewCount;
 
@@ -395,6 +467,13 @@ async function rateAlbum(bot,cmd,msg,args) {
     return
 }
 
+/**
+ * Poistaa käyttäjän aiemmin lähettämän arvion mongoDb:stä.
+ * 
+ * @param {*} msg Käytetään tunnistamaan käyttäjä ja albumi.
+ * @param {*} ratingAverage Ennen kutsua laskettava keskiarvo.
+ * @returns 
+ */
 async function deleteMongoReview(bot,msg,ratingAverage) {
     await Album
         .updateOne(
@@ -412,13 +491,30 @@ async function deleteMongoReview(bot,msg,ratingAverage) {
     return
 } 
 
-
+/**
+ * Päivittää käyttäjän arvion MongoDb:ssä.
+ * 
+ * Odottaa ensiksi, että käyttäjän vanha arvio poistetaan tietokannasta, minkä jälkeen lähettää uuden arvion käyttäjältä pushReviewToMongo()-komennolla.
+ * 
+ * @param {*} msg Käytetään tunnistamaan albumi ja käyttäjä.
+ * @param {*} Review Käyttäjän arvio Review-mongoskeemassa.
+ * @param {*} ratingAverage Ennen kutsua laskettu keskiarvo.
+ * @returns 
+ */
 async function updateMongoReview(bot,msg,Review,ratingAverage) {
     await deleteMongoReview(bot,msg,ratingAverage)
     await pushReviewToMongo(bot,msg,Review,ratingAverage)
     return
     }
 
+/**
+ * Async: Lisää uuden arvion mongotietokantaan ja päivittää keskiarvotiedot.
+ * 
+ * Etsii tietokannasta msg:stä parsitun albumin discord-viestikanavan ja tunnistaa albumin tietokannasta sen perusteella.
+ *   
+ * @param {*} Review Käyttäjän arvio mongon Review-skeemana.
+ * @param {*} ratingAverage Ennen kutsua laskettu uusi pistekeskiarvo.
+ */    
 async function pushReviewToMongo(bot,msg,Review,ratingAverage) {
     await Album
         .updateOne(
@@ -437,8 +533,11 @@ async function pushReviewToMongo(bot,msg,Review,ratingAverage) {
     return
 }
 
-
-
+/**
+ * Yhdenmukaistetaan käyttäjän lähettämä arvio Jivesin käyttämälle skaalalle 0-1000.
+ * 
+ * @returns Konvertoitu pistemäärä tai undefined, mikäli pistearvio tunnistamattomassa muodossa
+ */
 function parseRating(rating,bot,msg) {
     let convertedRating = Number(rating)
     if ((convertedRating<0) || (convertedRating>100)) {
@@ -466,6 +565,12 @@ function parseRating(rating,bot,msg) {
     }
 }
 
+/**
+ * Poistetaan kaikki albumin tiedot mongoDb:stä ja lokaalista tietokannasta ja poistaa Discord-topicin.
+ * 
+ * Tarkistaa kuka kutsuu komentoa; vain albumin lähettäjä tai moderaattori saa poistaa albumin tietokannasta.
+ *  
+ */
 async function removeAlbumFromReviews(bot,cmd,msg,args) {
     //Ei paskota hommia jos ei ole viestiä tai komento ei ole oikea
     if(!msg || cmd!== "dELETEALBUM") {
@@ -494,6 +599,13 @@ async function removeAlbumFromReviews(bot,cmd,msg,args) {
 
 }
 
+/**
+ * Etsii mongosta albumin ja palauttaa sen tiedot listana.
+ * 
+ * Hox! ei handlaa tällä hetkellä virheitä, olettaa että id:tä vastaava
+ * @param {*} id Albumia vastaavan Discord-topicin id.
+ * @returns Array mongoDb:stä.
+ */
 async function getAlbum(id) {
     let albumData;
     await Album
@@ -504,6 +616,9 @@ async function getAlbum(id) {
     return albumData 
 }
 
+/**
+ * Poistaa id:tä vastaavan albumin MongoDb:n tietokannasta.
+ */
 async function deleteAlbumFromMongo(id) {
     await Album
         .deleteOne({albumReviewTopicDiscord: id})
@@ -512,6 +627,16 @@ async function deleteAlbumFromMongo(id) {
     return
 }
 
+/**
+ * Käyttäjä lähettää uuden albumin arvioitavaksi.
+ * 
+ * Kutsuu Spotifyn API:a
+ * 
+ * @param {*} bot Botin omat tiedot, välitetään joka funktioon. 
+ * @param {*} cmd Komennon nimi. Tuplacheckaa että komento ajetaan vain silloin kun todella halutaan.
+ * @param {*} msg Käyttäjän viesti kokonaisuudessaan.
+ * @param {*} args Käyttäjän viestistä parsitut argumentit. args[0] on Spotifyn jakolinkki, args[1] "p" jos halutaan julkinen arvio
+ */
 async function addSpotifyAlbumToReviews(bot,cmd,msg,args) {
     //Ei paskota hommia jos ei ole viestiä tai komento ei ole oikea
     if(!msg || cmd!== "submit") {
@@ -520,7 +645,7 @@ async function addSpotifyAlbumToReviews(bot,cmd,msg,args) {
 
     const submission = args[0]
     //Onko submissionissa validi spotify share linkki
-    if (!(submission.includes(auth.spotifyShareLink))) {
+    if (!(submission.includes(auth.spotifyShareLink) || submission.includes(auth.spotifyMobileLink))) {
         const viesti2 = 
         vastaa(bot,msg,(msg.author.mention+", yritit lisätä arvioihin jotain Spotifystä antamatta kelvollista linkkiä. Levyraatiin vastaanotetaan Spotifystä vain albumeita ja singlejä, ei yksittäisiä kappaleita."))
         return
@@ -532,7 +657,8 @@ async function addSpotifyAlbumToReviews(bot,cmd,msg,args) {
         loggaa(bot,"Ei access tokenia?")
         return
     }
-    // Kutsussa on spotifylinkki ja access token fetchattu ` `
+
+    // Kutsussa on spotifylinkki ja access token fetchattu
     //Haetaan data
     const {albumJson,title,artists,albumId,albumType,img,imgSmall,label,releaseYear,copyrights} = await getSpotifyApiData(submission,accessToken)
     if (albumJson === undefined) {
@@ -601,32 +727,50 @@ async function postAlbumTopicToDiscord(bot,artists,title,year,submitter,submissi
     return reviewThread.id
 }
 
-export function loggaa(bot,logmessage) {
-    const logChannel = "1070986689503305789";
-    return bot.createMessage(logChannel,logmessage);
+/**
+ * Konvertoi spotify mobiililinkin Jivesin ymmärtämään desktop-formaattiin.
+ * 
+ * Luo jsdomilla dummy dom-elementin ja parsii tarvittavan linkin sieltä
+ * Päivitetty tähän muotoon 10.10.2023, jos spotifyn design muuttuu tämä mennee rikki
+ * 
+ * @param {*} submission Käyttäjän lähettämä spotify.link -muotoinen linkki
+ * @returns Vastauksesta parsittu saatu linkki
+ */
+async function convertSpotifyMobileLink(submission) {
+    const res = await axios
+    .get(submission)
+    /*.then(response => {
+      // jatkotoimenpiteitä?
+     })*/
+
+    //parsitaan requestin vastauksesta redirect linkki 
+    var dummyDom = new jsdom.JSDOM(res.data)
+    const link = dummyDom.window.document.querySelector("a").toString();
+    //loggaa(bot, "Yritän kääntää linkkiä")
+    return link
 }
 
-async function vastaaDmJaPoista(bot,msg,vastaus) {
-    const Dmkanava = await bot.getDMChannel(msg.author.id)
-    bot.createMessage(Dmkanava.id,vastaus)
-    return bot.deleteMessage(msg.channel.id,msg.id,"Deleting function call") 
-}
-function vastaaJaPoista(bot,msg,vastaus) {
-    const kanava = msg.channel.id
-    bot.createMessage(kanava,vastaus)
-    return bot.deleteMessage(msg.channel.id,msg.id,"Deleting function call") 
-}
-function vastaa(bot,msg,vastaus) {
-    const kanava = msg.channel.id
-    return bot.createMessage(kanava,vastaus)
-}
-
-async function vastaaDm(bot,msg,vastaus) {
-    const Dmkanava = await bot.getDMChannel(msg.author.id)
-    return bot.createMessage(Dmkanava.id,vastaus)
-}
+/**
+ * Tulkitsee käyttäjän lähettämästä linkistä Spotifyn Album ID:n ja tekee kutsun Spotifyn API:in tietojen hakemiseksi.
+ * 
+ * @param {*} submission Käyttäjän linkki.
+ * @param {*} tokenraw Spotifyn API:sta haettu access token.
+ * @return albumJson,title,artists,albumId,albumType,img,imgSmall,label,releaseYear,copyrights.
+ */
 async function getSpotifyApiData(submission,tokenraw) {
-    const albumGetUrl = auth.spotifyApiAlbumLink+submission.slice(auth.spotifyShareLink.length)
+    // Jos linkki on mobiilimuotoa "spotify.link" konvertoidaan se normaalimuotoon mistä näkyy albumID ja otetaan talteen vain albumID
+    let submissionId
+    if (submission.includes(auth.spotifyMobileLink)) {
+        let reformattedLink = await convertSpotifyMobileLink(submission)
+        submissionId=reformattedLink.slice(auth.spotifyShareLink.length)
+    }
+    // poistetaan submissionista "https://open.spotify.com/album/" tai "https://spotify.link/" ja korvataan spotifyApi-linkillä
+    if (submission.includes(auth.spotifyShareLink)) {
+        submissionId=submission.slice(auth.spotifyShareLink.length)
+    }
+    const albumGetUrl = auth.spotifyApiAlbumLink+submissionId
+
+    //Kutsutaan Spotify API:a
     const accessToken = "Bearer "+tokenraw;
     const api_headers = {
         headers: {
@@ -663,6 +807,13 @@ async function getSpotifyApiData(submission,tokenraw) {
     return {albumJson,title,artists,albumId,albumType,img,imgSmall,label,releaseYear,copyrights}
 }
 
+/**
+ * Lähettää kutsun Spotifyn API:in ja palauttaa Access tokenin jolla selata Spotifyn tietokantaa.
+ * 
+ * Kutsussa lähetetään ympäristömuuttujana tallennettu Auth-token.
+ * 
+ * @returns Spotify API:n access token.
+ */
 async function getAccessToken() {
     var myHeaders = new Headers();
     myHeaders.append("Authorization", spotifyApiAuth);
@@ -690,6 +841,11 @@ async function getAccessToken() {
     return token.access_token
 }
 
+/**
+ * Muuttaa Spotifyn API:sta saatavan artistien listan (array) merkkijonoksi.
+ * @param {*} artistArray Esim. [Hannibal, Soppa, Stepa].
+ * @returns Hannibal, Soppa & Stepa.
+ */
 function stringifyArtists(artistArray) {
     let string = '';
     for (let i=0;i<artistArray.length;i++) {
@@ -705,6 +861,11 @@ function stringifyArtists(artistArray) {
     return string
 }
 
+/**
+ * Kysyy onko kysyttävä albumi MongoDb:ssä.
+ * @param {*} id 
+ * @return True/False, albumia vastaava keskustelutopic linkki discordissa.
+ */
 async function isAlbumInDatabase(id) {
     let albumData;
     let reviewTopic;
@@ -723,6 +884,11 @@ async function isAlbumInDatabase(id) {
     }
     return {itsDARE,reviewTopic}   
 }
+/**
+ * Lisää albumin mongoDb-tietokantaan. Async. 
+ * 
+ * @param {*} album Lähetettävä albumi .
+ */
 async function pushAlbumToMongo(album) {
     await album
         .save()
@@ -730,3 +896,5 @@ async function pushAlbumToMongo(album) {
             console.log('Albumi lisätty tietokantaan: ',result)
         })
 }
+
+
