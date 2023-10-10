@@ -1,5 +1,9 @@
 # Jives-Bot
 
+## V 1.0.1.
+
+Koodi kommentoitu kauttaaltaan, lisätty parseri spotifyn lyhennettyjä linkkejä varten
+
 ## V 1.0.0.
 
 Kaiken peruspuuron pitäisi toimia. Sormet ristiin!
