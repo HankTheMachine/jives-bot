@@ -1,5 +1,10 @@
 # Jives-Bot
 
+
+## 11.03.2024
+
+Twitch apin oauth token generointi fiksattu
+
 ## V 1.0.1.
 
 Koodi kommentoitu kauttaaltaan, lisätty parseri spotifyn lyhennettyjä linkkejä varten

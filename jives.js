@@ -17,8 +17,9 @@ import {
 const app = express()
 app.use(cors())
 const discordToken = process.env.DISCORD_TOKEN;
-const twitchToken = process.env.TWITCH_TOKEN; //TODO: generoi twitch koodit kutsun aikana
+//const twitchToken = process.env.TWITCH_TOKEN; //TODO: generoi twitch koodit kutsun aikana
 const twitchAppId = process.env.TWITCH_APPID; //TODO : generoi twitch koodit kutsun aikana
+const twitchSecret = process.env.TWITCH_SECRET;
 const mongoUrl = process.env.MONGOURL_JIVES;
 const port = process.env.PORT //|| 8080;
 
@@ -116,16 +117,31 @@ app.get('/levyraatidata', (req, res) => {
 })
 
 app.get('/isSkriimOnline', async (req, res) => {
-    const url = "https://api.twitch.tv/helix/streams?user_id=55464815"
-    const API_HEADERS = {
-        headers: {
-        'Authorization' : twitchToken, // TODO: generoi twitch koodit kutsun aikana
-        'Client-ID': twitchAppId, // TODO: generoi twitch koodit kutsun aikana
+    const Userurl = "https://api.twitch.tv/helix/streams?user_id=55464815"
+    const oauthUrl = "https://id.twitch.tv/oauth2/token"
+
+    let twitchToken;
+    await axios
+        .post(oauthUrl,{
+            'client_id' : twitchAppId,
+            'client_secret' : twitchSecret,
+            'grant_type' : "client_credentials",
         }
-    }
+        )
+        .then(res => {
+            twitchToken = "Bearer "+res.data.access_token;
+        }).catch(function (error) {
+            console.log(error.response)
+            console.log("Twitch tokenin haku epäonnistui!");
+        })
+
     let status;
     await axios
-        .get(url,API_HEADERS)
+    .get(Userurl,
+        {headers: {
+        'Authorization' : twitchToken, 
+        'Client-ID': twitchAppId, 
+        }})
         .then(res => {
                 //console.log(res.data)
                 if (res.data.data.length > 0) {
